@@ -904,8 +904,7 @@ void BC24CircleRainbow()
   strand_t * pStrand = &STRANDS[0];
 
   int latestQueueEntry;
-  while (1)
-  {
+
 
     rainbow(pStrand, 0, 2000);
 
@@ -934,7 +933,7 @@ void BC24CircleRainbow()
     rainbow(pStrand, 0, 2000);
     digitalLeds_resetPixels(pStrand);
 
-  }
+
 
 }
 

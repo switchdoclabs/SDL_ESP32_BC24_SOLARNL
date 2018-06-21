@@ -5,7 +5,7 @@
 //
 //
 
-#define BC24SOLARNLSOFTWAREVERSION "002"
+#define BC24SOLARNLSOFTWAREVERSION "003"
 #undef BC24DEBUG
 
 // the three channels of the INA3221 named for SunControl Solar Power Controller channels (www.switchdoc.com)
@@ -129,6 +129,9 @@ int ledControl(String command);
 /* Global variables */
 void setup()
 {
+
+
+
   char rtn = 0;
   Serial.begin(115200);  // Serial is used for debugging
   delay(1000);
@@ -225,6 +228,10 @@ void setup()
 
   rest.variable("solarVoltage", &RESTsolarVoltage);
   rest.variable("batteryVoltage", &RESTbatteryVoltage);
+  rest.variable("solarCurrent", &RESTsolarCurrent);
+  rest.variable("batteryCurrent", &RESTbatteryCurrent);
+  rest.variable("loadCurrent", &RESTloadCurrent);
+  rest.variable("loadVoltage", &RESTloadVoltage);
 
   // Function to be exposed
   rest.function("led", ledControl);
@@ -236,10 +243,10 @@ void setup()
   //---------------------
   // Setup WiFi Interface
   //---------------------
-   WiFiPresent = false;
-   
-   WiFi.begin();
+  WiFiPresent = false;
 
+  WiFi.begin();
+  esp_wifi_set_storage(WIFI_STORAGE_RAM);
   // check for SSID
 
 
@@ -336,74 +343,76 @@ void setup()
 
 
 
-if (WiFiPresent == true)
-{
+  if (WiFiPresent == true)
+  {
 
-  WiFi_SSID = WiFi.SSID();
-  WiFi_psk = WiFi.psk();
-}
-else
-{
-  Serial.println("No Wifi Present");
-  BC24ThreeBlink(Red, 1000);
-}
+    WiFi_SSID = WiFi.SSID();
+    WiFi_psk = WiFi.psk();
+  }
+  else
+  {
+    Serial.println("No Wifi Present");
+    BC24ThreeBlink(Red, 1000);
+  }
 
-// write out preferences
+  // write out preferences
 
-writePreferences();
-if (WiFiPresent == true)
-{
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
+  writePreferences();
+  if (WiFiPresent == true)
+  {
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
 
-  Serial.print("WiFi Channel= ");
-  Serial.println(WiFi.channel());
-}
+    Serial.print("WiFi Channel= ");
+    Serial.println(WiFi.channel());
+  }
 
-//---------------------
-// End Setup WiFi Interface
-//---------------------
-
-
-if (WiFiPresent == true)
-{
-  // REST server
-
-  // Start the server
-  server.begin();
-  Serial.println("Server started");
-
-  // Print the IP address
-  Serial.println(WiFi.localIP());
-
-  timeClient.setTimeOffset(ClockTimeOffsetToUTC);
-  timeClient.setUpdateInterval(3600000);
-  timeClient.update();
+  //---------------------
+  // End Setup WiFi Interface
+  //---------------------
 
 
-  time_t t = timeClient.getEpochTime();
+  if (WiFiPresent == true)
+  {
+    // REST server
 
-  setTime(t);
+    // Start the server
+    server.begin();
+    Serial.println("Server started");
+
+    // Print the IP address
+    Serial.println(WiFi.localIP());
+
+    timeClient.setTimeOffset(ClockTimeOffsetToUTC);
+    timeClient.setUpdateInterval(3600000);
+    timeClient.update();
 
 
-  digitalClockDisplay();
-}
+    time_t t = timeClient.getEpochTime();
+
+    setTime(t);
+
+
+    digitalClockDisplay();
+  }
 
 
 
 
-Serial.print("RAM left: ");
-Serial.println(system_get_free_heap_size());
+  Serial.print("RAM left: ");
+  Serial.println(system_get_free_heap_size());
 
-blinkLED(2, 300);  // blink twice - OK!
+  blinkLED(2, 300);  // blink twice - OK!
 
 
 }
 
 long loopCount = 0;
 
-void loop()
+
+void handleRESTCalls()
 {
+
   if (WiFiPresent == true)
   {
 
@@ -419,10 +428,23 @@ void loop()
     {
       RESTsolarVoltage = SunControl.readChannelVoltage(SOLAR_CELL_CHANNEL);
       RESTbatteryVoltage = SunControl.readChannelVoltage(LIPO_BATTERY_CHANNEL);
+      RESTsolarCurrent = SunControl.readChannelCurrent(SOLAR_CELL_CHANNEL);
+      RESTbatteryCurrent = SunControl.readChannelCurrent(LIPO_BATTERY_CHANNEL);
+
+      RESTloadVoltage = SunControl.readChannelVoltage(OUTPUT_CHANNEL);
+      RESTloadCurrent = SunControl.readChannelCurrent(OUTPUT_CHANNEL);
 
       rest.handle(client);
     }
   }
+
+}
+
+
+void loop()
+{
+
+  handleRESTCalls();
 
 
   if ((loopCount % 1000) == 0)
@@ -440,7 +462,43 @@ void loop()
   if (solarVoltage < 2.0)
   {
     // now display a circle of LEDs
-    BC24CircleRainbow();
+    // Note:   We split this up to allow checks for REST calls - This is not interrupt driven (should be in an RTOS task), but it should be.
+    // BC24CircleRainbow();
+
+    // Rainbows with REST checks inbetween specific functions
+    strand_t * pStrand = &STRANDS[0];
+
+    int latestQueueEntry;
+
+
+    rainbow(pStrand, 0, 2000);
+
+    handleRESTCalls();
+    scanner(pStrand, 0, 2000);
+    handleRESTCalls();
+    scanner(pStrand, 1, 2000);
+
+    handleRESTCalls();
+    scanner(pStrand, 0, 2000);
+    handleRESTCalls();
+    rainbow(pStrand, 0, 2000);
+    handleRESTCalls();
+
+    rainbow(pStrand, 0, 2000);
+    handleRESTCalls();
+
+    scanner(pStrand, 5, 2000);
+    handleRESTCalls();
+    rainbow(pStrand, 0, 2000);
+    handleRESTCalls();
+
+    rainbow(pStrand, 0, 2000);
+
+    handleRESTCalls();
+    rainbow(pStrand, 0, 2000);
+    digitalLeds_resetPixels(pStrand);
+
+
   }
 
   loopCount++;
