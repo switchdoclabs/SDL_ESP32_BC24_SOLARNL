@@ -63,7 +63,7 @@ bool SmartConfigGetIP(long waitForStartSeconds, long secondsToWaitAfterStart)
 #ifdef BC24
           BC24ThreeBlink(Green, 1000);
 #else
-          vTaskDelay(1000 / portTICK_PERIOD_MS);
+             vTaskDelay(1000 / portTICK_PERIOD_MS);
 #endif
           break;
         }
@@ -93,19 +93,18 @@ bool SmartConfigGetIP(long waitForStartSeconds, long secondsToWaitAfterStart)
     esp_smartconfig_stop();
 
     Serial.println("No Wifi Present from Smart Config");
-#ifdef BC24
-    BC24ThreeBlink(Red, 1000);
-#else
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-#endif
-
   }
   else
   {
     Serial.println("Wifi Present from Smart Config");
   }
 
-    return myWiFiPresent;
+#ifdef BC24
+  BC24ThreeBlink(Red, 1000);
+#else
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
+#endif
+  return myWiFiPresent;
 }
 
 
@@ -164,7 +163,7 @@ bool WPSGetIP(long timeOutSeconds)
 #ifdef BC24
     BC24TwoBlink(White, 1000);
 #else
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
 #endif
     Serial.print(".");
     if (timeout < millis())
@@ -181,7 +180,7 @@ bool WPSGetIP(long timeOutSeconds)
 #ifdef BC24
     BC24TwoBlink(Red, 1000);
 #else
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
 #endif
 
   }
@@ -194,7 +193,7 @@ bool WPSGetIP(long timeOutSeconds)
 #ifdef BC24
     BC24TwoBlink(Green, 1000);
 #else
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
 #endif
   }
 
@@ -240,9 +239,9 @@ bool localAPGetIP(long apTimeOutSeconds)
 #ifdef BC24
   BC24OneBlink(White, 1000);
 
-
- // xSemaphoreGive( xSemaphoreSingleBlink);   // Turn on single blink
-
+  Serial.println("Before Semaphore Give");
+  xSemaphoreGive( xSemaphoreSingleBlink);   // Turn on single blink
+  Serial.println("After Semaphore Give");
 #else
   vTaskDelay(1000 / portTICK_PERIOD_MS);
 #endif
@@ -258,7 +257,7 @@ bool localAPGetIP(long apTimeOutSeconds)
     blinkLED(4, 300);  // blink 4, failed to connect
     BC24OneBlink(Red, 1000);
 #else
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
 #endif
     //reset and try again, or maybe put it to deep sleep
     //ESP.reset();
@@ -266,7 +265,7 @@ bool localAPGetIP(long apTimeOutSeconds)
     myWiFiPresent = false;
   }
 #ifdef BC24
-//  xSemaphoreTake( xSemaphoreSingleBlink, 10);   // Turn off single blink
+  xSemaphoreTake( xSemaphoreSingleBlink, 10);   // Turn off single blink
 #endif
   if (WiFi.status()  == WL_CONNECTED)
   {
@@ -274,7 +273,7 @@ bool localAPGetIP(long apTimeOutSeconds)
 #ifdef BC24
     BC24OneBlink(Green, 1000);
 #else
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
 #endif
   }
 

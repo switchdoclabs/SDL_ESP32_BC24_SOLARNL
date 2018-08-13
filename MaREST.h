@@ -148,7 +148,7 @@
 // Default number of max. exposed variables
 #ifndef NUMBER_VARIABLES
   #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(CORE_WILDFIRE) || defined(ESP8266)|| defined(ESP32) || !defined(ADAFRUIT_CC3000_H)
-  #define NUMBER_VARIABLES 10
+  #define NUMBER_VARIABLES 20
   #else
   #define NUMBER_VARIABLES 5
   #endif
@@ -157,7 +157,7 @@
 // Default number of max. exposed functions
 #ifndef NUMBER_FUNCTIONS
   #if defined(__AVR_ATmega1280__) || defined(ESP32) || defined(__AVR_ATmega2560__) || defined(CORE_WILDFIRE) || defined(ESP8266)
-  #define NUMBER_FUNCTIONS 10
+  #define NUMBER_FUNCTIONS 20
   #else
   #define NUMBER_FUNCTIONS 5
   #endif

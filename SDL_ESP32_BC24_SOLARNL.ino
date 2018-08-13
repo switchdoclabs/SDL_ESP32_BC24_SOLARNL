@@ -5,7 +5,7 @@
 //
 //
 
-#define BC24SOLARNLSOFTWAREVERSION "003"
+#define BC24SOLARNLSOFTWAREVERSION "004"
 #undef BC24DEBUG
 
 // the three channels of the INA3221 named for SunControl Solar Power Controller channels (www.switchdoc.com)
@@ -13,6 +13,7 @@
 #define SOLAR_CELL_CHANNEL 2
 #define OUTPUT_CHANNEL 3
 
+#define DEFAULTCLOCKTIMEOFFSETTOUTC -25200
 
 #define BUTTONPIN 17
 
@@ -26,9 +27,25 @@
 
 SDL_Arduino_SunControl SunControl;
 
+String adminPassword;
+
 #include "utility.h"
 
+#include <Preferences.h>
+
+
+/* create an instance of Preferences library */
+Preferences preferences;
+
+
+#include "BC24Preferences.h"
+
+#include "RTOSDefs.h"
+
+
 #include "BigCircleFunctions.h"
+
+#include "NeoFire.h"
 
 #if defined(ARDUINO) && ARDUINO >= 100
 // No extras
@@ -55,7 +72,6 @@ bool WiFiPresent = false;
 
 #include "Clock.h"
 
-#include <Preferences.h>
 
 
 #include "NTPClient.h"
@@ -64,9 +80,6 @@ WiFiUDP ntpUDP;
 
 
 NTPClient timeClient(ntpUDP);
-
-/* create an instance of Preferences library */
-Preferences preferences;
 
 
 #include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
@@ -92,13 +105,38 @@ String WPassword;
 
 
 
-#include "BC24Preferences.h"
+String getValue(String data, char separator, int index)
+{
+  int found = 0;
+  int strIndex[] = {
+    0, -1
+  };
+  int maxIndex = data.length() - 1;
+  for (int i = 0; i <= maxIndex && found <= index; i++) {
+    if (data.charAt(i) == separator || i == maxIndex) {
+      found++;
+      strIndex[0] = strIndex[1] + 1;
+      strIndex[1] = (i == maxIndex) ? i + 1 : i;
+    }
+  }
+  return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
+
+
+
 
 #include <esp_wps.h>
 #include <esp_smartconfig.h>
 
 
 #define ESP_WPS_MODE WPS_TYPE_PBC
+
+// Kludge for latest ESP32 SDK - July 1, 2018
+
+#define WPS_CONFIG_INIT_DEFAULT(type) { \
+    .wps_type = type, \
+                .crypto_funcs = &g_wifi_default_wps_crypto_funcs, \
+  }
 
 esp_wps_config_t config = WPS_CONFIG_INIT_DEFAULT(ESP_WPS_MODE);
 
@@ -109,6 +147,9 @@ esp_wps_config_t config = WPS_CONFIG_INIT_DEFAULT(ESP_WPS_MODE);
 #include "MaREST.h"
 // Create aREST instance
 aREST rest = aREST();
+
+#include "MaRESTFunctions.h"
+
 
 // Create an instance of the server
 WiFiServer server(WEB_SERVER_PORT);
@@ -125,6 +166,10 @@ float RESTloadCurrent;
 
 // Declare functions to be exposed to the API
 int ledControl(String command);
+
+NeoFire fire;
+
+#include "RTOSTasks.h"
 
 /* Global variables */
 void setup()
@@ -235,10 +280,111 @@ void setup()
 
   // Function to be exposed
   rest.function("led", ledControl);
+  rest.function("clock", clockControl);
+  rest.function("rainbow", rainbowControl);
+
+  rest.function("fire", fireControl);
+
+  rest.function("setDarkLight", setDarkLight);
+  rest.function("setClockTimeOffsetToUTC", setClockTimeOffsetToUTC);
+  rest.function("setTurnOn", setTurnOn);
+  
 
   // Give name & ID to the device (ID should be 6 characters long)
   rest.set_id("1");
   rest.set_name("SDL_ESP32_BC24_SOLARNL");
+
+
+  // RTOS for WiFi support
+
+  xSemaphoreSingleBlink = xSemaphoreCreateBinary();
+  xSemaphoreGive( xSemaphoreSingleBlink);   // initialize
+  xSemaphoreTake( xSemaphoreSingleBlink, 10);   // start with this off
+
+
+
+  // RTOS
+
+
+  xSemaphoreClock = xSemaphoreCreateBinary();
+  xSemaphoreGive( xSemaphoreClock);   // initialize
+  xSemaphoreTake( xSemaphoreClock, 10);   // start with this off
+
+  xSemaphoreFire = xSemaphoreCreateBinary();
+  xSemaphoreGive( xSemaphoreFire);   // initialize
+  xSemaphoreTake( xSemaphoreFire, 10);   // start with this off
+
+  xSemaphoreRESTCommand = xSemaphoreCreateBinary();
+  xSemaphoreGive( xSemaphoreRESTCommand);   // initialize with it on!
+  //xSemaphoreTake( xSemaphoreRESTCommand, 10);   // start with this off
+
+
+  xSemaphoreRainbow = xSemaphoreCreateBinary();
+  xSemaphoreGive( xSemaphoreRainbow);   // initialize
+  xSemaphoreTake( xSemaphoreRainbow, 10);   // start with this off
+
+
+  Serial.println("RTOS Tasks Starting");
+
+
+
+  xTaskCreatePinnedToCore(
+    taskSingleBlink,          /* Task function. */
+    "TaskSingleBlink",        /* String with name of task. */
+    1000,            /* Stack size in words. */
+    NULL,             /* Parameter passed as input of the task */
+    2,                /* Priority of the task. */
+    NULL,             /* Task handle. */
+    1);               // Specific Core
+
+  xTaskCreatePinnedToCore(
+    taskButtonRead,          /* Task function. */
+    "TaskButtonRead",        /* String with name of task. */
+    10000,            /* Stack size in words. */
+    NULL,             /* Parameter passed as input of the task */
+    1,                /* Priority of the task. */
+    NULL,             /* Task handle. */
+    1);               // Specific Core
+
+
+  xTaskCreatePinnedToCore(
+    taskClock,          /* Task function. */
+    "TaskClock",        /* String with name of task. */
+    10000,            /* Stack size in words. */
+    NULL,             /* Parameter passed as input of the task */
+    2,                /* Priority of the task. */
+    NULL,             /* Task handle. */
+    1);               // Specific Core
+
+  xTaskCreatePinnedToCore(
+    taskFire,          /* Task function. */
+    "TaskFire",        /* String with name of task. */
+    2000,            /* Stack size in words. */
+    NULL,             /* Parameter passed as input of the task */
+    2,                /* Priority of the task. */
+    NULL,             /* Task handle. */
+    1);               // Specific Core
+
+  xTaskCreatePinnedToCore(
+    taskRESTCommand,          /* Task function. */
+    "TaskRESTCommand",        /* String with name of task. */
+    10000,            /* Stack size in words. */
+    NULL,             /* Parameter passed as input of the task */
+    3,                /* Priority of the task. */
+    NULL,             /* Task handle. */
+    1);               // Specific Core
+
+
+  xTaskCreatePinnedToCore(
+    taskRainbow,          /* Task function. */
+    "TaskRainbow",        /* String with name of task. */
+    2000,            /* Stack size in words. */
+    NULL,             /* Parameter passed as input of the task */
+    2,                /* Priority of the task. */
+    NULL,             /* Task handle. */
+    1);               // Specific Core
+
+
 
   //---------------------
   // Setup WiFi Interface
@@ -407,106 +553,117 @@ void setup()
 
 }
 
-long loopCount = 0;
+int oldCurrentLEDMode = -1;
 
-
-void handleRESTCalls()
+void evaluatedCurrentLEDMode()
 {
 
-  if (WiFiPresent == true)
+
+
+
+
+
+
+
+
+
+
+  if (currentLEDMode != oldCurrentLEDMode)
   {
 
-    // Handle REST calls
-    WiFiClient client = server.available();
+    Serial.print("evaluating Mode:");
+    Serial.print(oldCurrentLEDMode);
+    Serial.print("/");
+    Serial.println(currentLEDMode);
 
-    /*
-      while (!client.available()) {
-      delay(1);
-      }
-    */
-    if (client.available())
+    oldCurrentLEDMode = currentLEDMode;
+    xSemaphoreTake( xSemaphoreClock, 10);   // start with this off
+    xSemaphoreTake( xSemaphoreFire, 10);   // start with this off
+    xSemaphoreTake( xSemaphoreRainbow, 10);   // start with this off
+    // Take all and then give back the start one
+
+  strand_t * pStrand = &STRANDS[0];
+  BC24clearStrip(pStrand);
+
+    switch (currentLEDMode)
     {
-      RESTsolarVoltage = SunControl.readChannelVoltage(SOLAR_CELL_CHANNEL);
-      RESTbatteryVoltage = SunControl.readChannelVoltage(LIPO_BATTERY_CHANNEL);
-      RESTsolarCurrent = SunControl.readChannelCurrent(SOLAR_CELL_CHANNEL);
-      RESTbatteryCurrent = SunControl.readChannelCurrent(LIPO_BATTERY_CHANNEL);
+      case BC24_LED_MODE_NO_ROTATE_RAINBOW:
+        xSemaphoreGive( xSemaphoreRainbow);   // turn on
+        break;
 
-      RESTloadVoltage = SunControl.readChannelVoltage(OUTPUT_CHANNEL);
-      RESTloadCurrent = SunControl.readChannelCurrent(OUTPUT_CHANNEL);
+      case BC24_LED_MODE_NO_ROTATE_FIRE:
+        xSemaphoreGive( xSemaphoreFire);   // turn on
+        break;
+      case BC24_LED_MODE_NO_ROTATE_CLOCK:
+        xSemaphoreGive( xSemaphoreClock);   // turn on
+        break;
 
-      rest.handle(client);
+      default:
+
+        break;
+
+
+
     }
+
   }
 
 }
+
+long loopCount = 0;
 
 
 void loop()
 {
 
-  handleRESTCalls();
 
 
-  if ((loopCount % 1000) == 0)
+
+  if ((loopCount % 100) == 0)
     printValues();
 
-  if ((loopCount % 50) == 0)
-    blinkLED(2, 300);  // blink twice - I'm still here!
 
   // Now check the sunlight.  If solar voltage is over 2.0V, then stop the LEDs
-  float solarVoltage;
-  solarVoltage = SunControl.readChannelVoltage(SOLAR_CELL_CHANNEL);
-  Serial.print("solarVoltage=");
-  Serial.println(solarVoltage);
 
-  if (solarVoltage < 2.0)
+
+  RESTsolarVoltage = SunControl.readChannelVoltage(SOLAR_CELL_CHANNEL);
+  RESTbatteryVoltage = SunControl.readChannelVoltage(LIPO_BATTERY_CHANNEL);
+  RESTsolarCurrent = SunControl.readChannelCurrent(SOLAR_CELL_CHANNEL);
+  RESTbatteryCurrent = SunControl.readChannelCurrent(LIPO_BATTERY_CHANNEL);
+
+  RESTloadVoltage = SunControl.readChannelVoltage(OUTPUT_CHANNEL);
+  RESTloadCurrent = SunControl.readChannelCurrent(OUTPUT_CHANNEL);
+
+  Serial.print("solarVoltage=");
+  Serial.println(RESTsolarVoltage);
+  Serial.print("turnOnLight=");
+  Serial.println(turnOnLight);
+
+//  if ((RESTsolarVoltage < 2.0) || (turnOnLight == 1))
+  if ((RESTsolarVoltage > 2.0) || (turnOnLight == 1))
   {
     // now display a circle of LEDs
     // Note:   We split this up to allow checks for REST calls - This is not interrupt driven (should be in an RTOS task), but it should be.
     // BC24CircleRainbow();
 
-    // Rainbows with REST checks inbetween specific functions
-    strand_t * pStrand = &STRANDS[0];
 
-    int latestQueueEntry;
-
-
-    rainbow(pStrand, 0, 2000);
-
-    handleRESTCalls();
-    scanner(pStrand, 0, 2000);
-    handleRESTCalls();
-    scanner(pStrand, 1, 2000);
-
-    handleRESTCalls();
-    scanner(pStrand, 0, 2000);
-    handleRESTCalls();
-    rainbow(pStrand, 0, 2000);
-    handleRESTCalls();
-
-    rainbow(pStrand, 0, 2000);
-    handleRESTCalls();
-
-    scanner(pStrand, 5, 2000);
-    handleRESTCalls();
-    rainbow(pStrand, 0, 2000);
-    handleRESTCalls();
-
-    rainbow(pStrand, 0, 2000);
-
-    handleRESTCalls();
-    rainbow(pStrand, 0, 2000);
-    digitalLeds_resetPixels(pStrand);
-
+    evaluatedCurrentLEDMode();
 
   }
+  else
+  {
+    currentLEDMode = BC24_LED_MODE_NO_ROTATE_CLOCK; // defaults to clock
 
+    if ((loopCount % 5) == 0)
+      blinkLED(2, 300);  // blink twice - I'm still here!
+
+  }
   loopCount++;
 
 
 
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-  delay(100);  // delay for serial readability
 }
 
 void printValues()
@@ -557,12 +714,4 @@ void printValues()
 
 }
 
-// Custom function accessible by the API
-int ledControl(String command) {
 
-  // Get state from command
-  int state = command.toInt();
-
-  digitalWrite(BLINKPIN, state);
-  return 1;
-}

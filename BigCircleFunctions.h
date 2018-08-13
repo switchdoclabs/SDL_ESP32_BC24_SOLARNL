@@ -1,10 +1,18 @@
 
 
+#define BC24_LED_MODE_NO_ROTATE_RAINBOW   0
+
+#define BC24_LED_MODE_NO_ROTATE_FIRE      1
+#define BC24_LED_MODE_NO_ROTATE_CLOCK     2
+
+#define BC24_LED_MODE_NON_IMPLEMENTED     100
+
 
 
 
 #include "esp32_digital_led_lib.h"
 
+// standard colors
 // standard colors
 
 //pixelColor_t pixelFromRGBW(uint8_t r, uint8_t g, uint8_t b, uint8_t w)
@@ -12,11 +20,13 @@
 const pixelColor_t BrightRed = pixelFromRGBW(255, 0, 0, 0);
 const pixelColor_t BrightGreen = pixelFromRGBW(0, 255, 0, 0);
 const pixelColor_t BrightBlue = pixelFromRGBW(0, 0, 255, 0);
+const pixelColor_t BrightWhite = pixelFromRGBW(0, 0, 0, 255);
 
-const pixelColor_t Red = pixelFromRGBW(255, 0, 0, 0);
-const pixelColor_t Green = pixelFromRGBW(0, 255, 0, 0);
-const pixelColor_t Blue = pixelFromRGBW(0, 0, 255, 0);
-
+// these four are for the lightDark variable to change
+pixelColor_t Red = pixelFromRGBW(255, 0, 0, 0);
+pixelColor_t Green = pixelFromRGBW(0, 255, 0, 0);
+pixelColor_t Blue = pixelFromRGBW(0, 0, 255, 0);
+pixelColor_t White = pixelFromRGBW(0, 0, 0, 255);
 
 const pixelColor_t BrightYellow = pixelFromRGBW(255, 255, 0, 0);
 const pixelColor_t BrightCyan = pixelFromRGBW(0, 255, 255, 0);
@@ -25,13 +35,39 @@ const pixelColor_t BrightPurple = pixelFromRGBW(255, 0, 255, 0);
 const pixelColor_t DarkRed = pixelFromRGBW(32, 0, 0, 0);
 const pixelColor_t DarkGreen = pixelFromRGBW(0, 32, 0, 0);
 const pixelColor_t DarkBlue = pixelFromRGBW(0, 0, 32, 0);
+const pixelColor_t DarkWhite = pixelFromRGBW(0, 0, 0, 32);
 
 const pixelColor_t DarkYellow = pixelFromRGBW(32, 32, 0, 0);
 const pixelColor_t DarkCyan = pixelFromRGBW(0, 32, 32, 0);
 const pixelColor_t DarkPurple = pixelFromRGBW(32, 0, 32, 0);
 
-const pixelColor_t White = pixelFromRGBW(0, 0, 0, 255);
+
 const pixelColor_t Black = pixelFromRGBW(0, 0, 0, 0);
+
+
+
+void setUpDarkLight()
+{
+  // set up light or dark
+
+  if (darkLight == 0)
+  {
+    Red = DarkRed;
+    Blue = DarkBlue;
+    Green = DarkGreen;
+    White = DarkWhite;
+  }
+  else
+  {
+
+    Red = BrightRed;
+    Blue = BrightBlue;
+    Green = BrightGreen;
+    White = BrightWhite;
+  }
+
+}
+
 
 // strands for our system
 
