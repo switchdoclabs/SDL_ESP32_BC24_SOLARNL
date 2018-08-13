@@ -639,8 +639,8 @@ void loop()
   Serial.print("turnOnLight=");
   Serial.println(turnOnLight);
 
-//  if ((RESTsolarVoltage < 2.0) || (turnOnLight == 1))
-  if ((RESTsolarVoltage > 2.0) || (turnOnLight == 1))
+  if ((RESTsolarVoltage < 2.0) || (turnOnLight == 1))
+//  if ((RESTsolarVoltage > 2.0) || (turnOnLight == 1))  // debug
   {
     // now display a circle of LEDs
     // Note:   We split this up to allow checks for REST calls - This is not interrupt driven (should be in an RTOS task), but it should be.
