@@ -3,6 +3,7 @@ BC24 With the SunControl Solar Power <BR>
 SwitchDoc Labs June 2018 <BR>
 For the BC24 24 Pixel plus ESP32 Dual Core Processor with Grove Connectors
 
+August 13, 2018:  V005:  Bug fixes, additional REST variables - Full Release<BR> 
 August 12, 2018:  V004:  Additional REST Commands, fix to ESP32 Library Problem<BR>
 June 21, 2018:  V003:  Improved REST response times.  Added I2C reliability improvement<BR>
 June 19, 2018:  V002:   Initial Release June 19, 2018<BR>

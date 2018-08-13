@@ -5,7 +5,7 @@
 //
 //
 
-#define BC24SOLARNLSOFTWAREVERSION "004"
+#define BC24SOLARNLSOFTWAREVERSION "005"
 #undef BC24DEBUG
 
 // the three channels of the INA3221 named for SunControl Solar Power Controller channels (www.switchdoc.com)
@@ -164,6 +164,8 @@ float RESTbatteryCurrent;
 float RESTloadVoltage;
 float RESTloadCurrent;
 
+String SWVersion = BC24SOLARNLSOFTWAREVERSION;
+
 // Declare functions to be exposed to the API
 int ledControl(String command);
 
@@ -278,6 +280,12 @@ void setup()
   rest.variable("loadCurrent", &RESTloadCurrent);
   rest.variable("loadVoltage", &RESTloadVoltage);
 
+  rest.variable("currentLEDMode", &currentLEDMode);
+  rest.variable("darkLight", &darkLight);
+
+
+  rest.variable("Version", &SWVersion);
+
   // Function to be exposed
   rest.function("led", ledControl);
   rest.function("clock", clockControl);
@@ -288,7 +296,7 @@ void setup()
   rest.function("setDarkLight", setDarkLight);
   rest.function("setClockTimeOffsetToUTC", setClockTimeOffsetToUTC);
   rest.function("setTurnOn", setTurnOn);
-  
+
 
   // Give name & ID to the device (ID should be 6 characters long)
   rest.set_id("1");
@@ -555,13 +563,33 @@ void setup()
 
 int oldCurrentLEDMode = -1;
 
+void printSemaphoreStatus(String Description)
+
+
+{
+
+#ifdef BC24DEBUG
+  Serial.println("------------------------");
+  Serial.println(Description);
+  Serial.println("------------------------");
+  Serial.print("ClockSemaphore=");
+  Serial.println(uxSemaphoreGetCount(xSemaphoreClock));
+  Serial.print("FireSemaphore=");
+  Serial.println(uxSemaphoreGetCount(xSemaphoreFire));
+  Serial.print("RainbowSemaphore=");
+  Serial.println(uxSemaphoreGetCount(xSemaphoreRainbow));
+  Serial.println("------------------------");
+#endif
+
+}
+
 void evaluatedCurrentLEDMode()
 {
 
 
 
 
-
+  printSemaphoreStatus("Before Eval");
 
 
 
@@ -576,14 +604,18 @@ void evaluatedCurrentLEDMode()
     Serial.print("/");
     Serial.println(currentLEDMode);
 
+
+
     oldCurrentLEDMode = currentLEDMode;
     xSemaphoreTake( xSemaphoreClock, 10);   // start with this off
     xSemaphoreTake( xSemaphoreFire, 10);   // start with this off
     xSemaphoreTake( xSemaphoreRainbow, 10);   // start with this off
     // Take all and then give back the start one
 
-  strand_t * pStrand = &STRANDS[0];
-  BC24clearStrip(pStrand);
+    printSemaphoreStatus("Past Takes");
+
+    strand_t * pStrand = &STRANDS[0];
+    BC24clearStrip(pStrand);
 
     switch (currentLEDMode)
     {
@@ -607,6 +639,7 @@ void evaluatedCurrentLEDMode()
     }
 
   }
+  printSemaphoreStatus("At End of Eval");
 
 }
 
@@ -633,14 +666,17 @@ void loop()
 
   RESTloadVoltage = SunControl.readChannelVoltage(OUTPUT_CHANNEL);
   RESTloadCurrent = SunControl.readChannelCurrent(OUTPUT_CHANNEL);
+  
+#ifdef BC24DEBUG
 
   Serial.print("solarVoltage=");
   Serial.println(RESTsolarVoltage);
   Serial.print("turnOnLight=");
   Serial.println(turnOnLight);
+#endif
 
   if ((RESTsolarVoltage < 2.0) || (turnOnLight == 1))
-//  if ((RESTsolarVoltage > 2.0) || (turnOnLight == 1))  // debug
+    //  if ((RESTsolarVoltage > 2.0) || (turnOnLight == 1))  // debug
   {
     // now display a circle of LEDs
     // Note:   We split this up to allow checks for REST calls - This is not interrupt driven (should be in an RTOS task), but it should be.
@@ -668,7 +704,7 @@ void loop()
 
 void printValues()
 {
-  char report[80];
+
   Serial.println("\r\n**************");
   Serial.println( "------------------------------");
   Serial.println( "SunControl Voltages and Currents");
@@ -709,8 +745,6 @@ void printValues()
   Serial.print("Output Current 3:       "); Serial.print(current_mA3); Serial.println(" mA");
   Serial.println("");
 
-
-  Serial.println(report);
 
 }
 

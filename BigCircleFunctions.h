@@ -837,9 +837,9 @@ void   displayClock(int displayHour, int displayMinute, int displaySecond)
   pixelColor_t minuteColor;
   pixelColor_t hourColor;
 
-  secondColor = DarkRed;
-  minuteColor = DarkGreen;
-  hourColor = DarkBlue;
+  secondColor = Red;
+  minuteColor = Green;
+  hourColor = Blue;
 
   if (displayHour > 12)
     displayHour = displayHour - 12;

@@ -145,7 +145,7 @@ void taskClock( void * parameter)
 
         tmElements_t tm_currentTime;
         breakTime(currentTime, tm_currentTime);
-        Serial.println("After breaktime");
+        //Serial.println("After breaktime");
         digitalClockDisplay();
 
         displayClock(tm_currentTime.Hour, tm_currentTime.Minute, tm_currentTime.Second);
@@ -255,90 +255,87 @@ void taskRainbow( void * parameter)
   for (;;)  {
 
     strand_t * pStrand = &STRANDS[0];
+        printSemaphoreStatus("In Task Rainbow");
     if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
     {
-      while (1)
+
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
       {
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
 
-          rainbow(pStrand, 0, 2000);
-        }
-        else
-          break;
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-
-          scanner(pStrand, 0, 2000);
-        }
-        else
-          break;
-
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          scanner(pStrand, 1, 2000);
-        }
-        else
-          break;
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          scanner(pStrand, 0, 2000);
-        }
-        else
-          break;
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          rainbow(pStrand, 0, 2000);
-        }
-        else
-          break;
-
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          scanner(pStrand, 1, 2000); // A tiny delay can smooth things out
-        }
-        else
-          break;
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          rainbow(pStrand, 0, 2000);
-        }
-        else
-          break;
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          scanner(pStrand, 5, 2000);
-        }
-        else
-          break;
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          rainbow(pStrand, 0, 2000);
-        }
-        else
-          break;
-
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          rainbow(pStrand, 0, 2000);
-        }
-        else
-          break;
-
-        if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-        {
-          rainbow(pStrand, 0, 2000);
-        }
-        else
-          break;
-
+        rainbow(pStrand, 0, 2000);
       }
+      else
+        break;
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+
+        scanner(pStrand, 0, 2000);
+      }
+      else
+        break;
+
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        scanner(pStrand, 1, 2000);
+      }
+      else
+        break;
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        scanner(pStrand, 0, 2000);
+      }
+      else
+        break;
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        rainbow(pStrand, 0, 2000);
+      }
+      else
+        break;
+
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        scanner(pStrand, 1, 2000); // A tiny delay can smooth things out
+      }
+      else
+        break;
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        rainbow(pStrand, 0, 2000);
+      }
+      else
+        break;
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        scanner(pStrand, 5, 2000);
+      }
+      else
+        break;
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        rainbow(pStrand, 0, 2000);
+      }
+      else
+        break;
+
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        rainbow(pStrand, 0, 2000);
+      }
+      else
+        break;
+
+      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      {
+        rainbow(pStrand, 0, 2000);
+      }
+      else
+        break;
+
 
     }
-    else
-    {
+
       vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
 
   }
 }

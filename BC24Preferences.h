@@ -79,7 +79,7 @@ void readPreferences()
 
   currentLEDMode = preferences.getInt("currentLEDMode", 0);
 
-  darkLight = preferences.getInt("darkLight", 1);
+  darkLight = preferences.getInt("darkLight", 0);
 
   WiFi_SSID = preferences.getString("WiFi_SSID", "");
   WiFi_psk = preferences.getString("WiFi_psk", "");
