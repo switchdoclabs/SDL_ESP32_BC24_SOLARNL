@@ -5,6 +5,8 @@
 #define BC24_LED_MODE_NO_ROTATE_FIRE      1
 #define BC24_LED_MODE_NO_ROTATE_CLOCK     2
 
+#define BC24_WEATHER_MODE_NO_ROTATE_BLANK     20
+
 #define BC24_LED_MODE_NON_IMPLEMENTED     100
 
 
@@ -90,7 +92,7 @@ strand_t STRANDS[] = { // Avoid using any of the strapping pins on the ESP32
 };
 
 //strand_t * strands [] = { &STRANDS[0], &STRANDS[1], &STRANDS[2], &STRANDS[3] };
-strand_t * strands [] = { &STRANDS[0] };
+strand_t * strands [] = { &STRANDS[0], &STRANDS[1] };
 int STRANDCNT = sizeof(STRANDS) / sizeof(STRANDS[0]);
 
 // Forward declarations
@@ -426,7 +428,11 @@ void rainbow(strand_t * pStrand, unsigned long delay_ms, unsigned long timeout_m
 
 //**************************************************************************//
 
-
+void BC24clearStrip()
+{
+  strand_t * pStrand = &STRANDS[0];
+  digitalLeds_resetPixels(pStrand);
+}
 
 void BC24clearStrip(strand_t * pStrand)
 {
@@ -738,7 +744,6 @@ void displayCircleLED(int pixelNumber, pixelColor_t pixelColor)
   Prev1Color = pixelColor;
   Prev2Color = pixelColor;
 
-
   /*
      Serial.print("Pre(");
      Serial.print(Prev1Color.r);
@@ -748,6 +753,7 @@ void displayCircleLED(int pixelNumber, pixelColor_t pixelColor)
      Serial.print(Prev1Color.b);
      Serial.print(",");
      Serial.print(Prev1Color.w);
+
      Serial.println(")");
   */
 
@@ -942,32 +948,32 @@ void BC24CircleRainbow()
   int latestQueueEntry;
 
 
-    rainbow(pStrand, 0, 2000);
+  rainbow(pStrand, 0, 2000);
 
 
-    scanner(pStrand, 0, 2000);
+  scanner(pStrand, 0, 2000);
 
-    scanner(pStrand, 1, 2000);
-
-
-    scanner(pStrand, 0, 2000);
-    
-    rainbow(pStrand, 0, 2000);
+  scanner(pStrand, 1, 2000);
 
 
-    rainbow(pStrand, 0, 2000);
+  scanner(pStrand, 0, 2000);
 
-  
-    scanner(pStrand, 5, 2000);
-   
-    rainbow(pStrand, 0, 2000);
+  rainbow(pStrand, 0, 2000);
 
-   
-    rainbow(pStrand, 0, 2000);
 
- 
-    rainbow(pStrand, 0, 2000);
-    digitalLeds_resetPixels(pStrand);
+  rainbow(pStrand, 0, 2000);
+
+
+  scanner(pStrand, 5, 2000);
+
+  rainbow(pStrand, 0, 2000);
+
+
+  rainbow(pStrand, 0, 2000);
+
+
+  rainbow(pStrand, 0, 2000);
+  digitalLeds_resetPixels(pStrand);
 
 
 

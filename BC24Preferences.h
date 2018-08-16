@@ -54,7 +54,7 @@ void writePreferences()
 #ifdef BC24DEBUG
   Serial.println("----Writing Preferences---");
   Serial.print("currentLEDMode="); Serial.println(currentLEDMode);
-  Serial.print("OLEDOn="); Serial.println(OLEDOn);
+ 
   Serial.print("darkLight="); Serial.println(darkLight);
 
 
@@ -94,7 +94,7 @@ void readPreferences()
 #ifdef BC24DEBUG
   Serial.println("----Reading Preferences---");
   Serial.print("currentLEDMode="); Serial.println(currentLEDMode);
-  Serial.print("OLEDOn="); Serial.println(OLEDOn);
+
   Serial.print("darkLight="); Serial.println(darkLight);
 
   Serial.printf("SSID="); Serial.println(WiFi_SSID);

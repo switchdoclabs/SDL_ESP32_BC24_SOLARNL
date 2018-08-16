@@ -223,7 +223,7 @@ bool localAPGetIP(long apTimeOutSeconds)
   String macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
                  String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
   macID.toUpperCase();
-  APssid = "BigCircle24-" + macID;
+  APssid = "BC24-" + macID;
 
 
   //WiFiManager

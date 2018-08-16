@@ -5,7 +5,7 @@
 //
 //
 
-#define BC24SOLARNLSOFTWAREVERSION "005"
+#define BC24SOLARNLSOFTWAREVERSION "006"
 #undef BC24DEBUG
 
 // the three channels of the INA3221 named for SunControl Solar Power Controller channels (www.switchdoc.com)
@@ -55,7 +55,7 @@ Preferences preferences;
 #include "arduinoish.hpp"
 #endif
 
-
+int oldCurrentLEDMode = -1;
 bool WiFiPresent = false;
 
 #include <time.h>
@@ -200,6 +200,8 @@ void setup()
   // setup preferences
   readPreferences();
 
+  oldCurrentLEDMode = -1;  // force first LED Mode Evaluation
+
   ClockTimeOffsetToUTC = -25200;
 
   pinMode(BLINKPIN, OUTPUT);
@@ -297,6 +299,7 @@ void setup()
   rest.function("setClockTimeOffsetToUTC", setClockTimeOffsetToUTC);
   rest.function("setTurnOn", setTurnOn);
 
+  rest.function("setAdminPassword", setAdminPassword);
 
   // Give name & ID to the device (ID should be 6 characters long)
   rest.set_id("1");
@@ -386,7 +389,7 @@ void setup()
   xTaskCreatePinnedToCore(
     taskRainbow,          /* Task function. */
     "TaskRainbow",        /* String with name of task. */
-    2000,            /* Stack size in words. */
+    20000,            /* Stack size in words. */
     NULL,             /* Parameter passed as input of the task */
     2,                /* Priority of the task. */
     NULL,             /* Task handle. */
@@ -561,7 +564,7 @@ void setup()
 
 }
 
-int oldCurrentLEDMode = -1;
+
 
 void printSemaphoreStatus(String Description)
 
@@ -583,6 +586,8 @@ void printSemaphoreStatus(String Description)
 
 }
 
+
+
 void evaluatedCurrentLEDMode()
 {
 
@@ -594,16 +599,15 @@ void evaluatedCurrentLEDMode()
 
 
 
-
-
   if (currentLEDMode != oldCurrentLEDMode)
   {
 
+#ifdef BC24DEBUG
     Serial.print("evaluating Mode:");
     Serial.print(oldCurrentLEDMode);
     Serial.print("/");
     Serial.println(currentLEDMode);
-
+#endif
 
 
     oldCurrentLEDMode = currentLEDMode;
@@ -630,6 +634,9 @@ void evaluatedCurrentLEDMode()
         xSemaphoreGive( xSemaphoreClock);   // turn on
         break;
 
+      case BC24_WEATHER_MODE_NO_ROTATE_BLANK:   // no display
+        break;
+
       default:
 
         break;
@@ -644,7 +651,10 @@ void evaluatedCurrentLEDMode()
 }
 
 long loopCount = 0;
+bool first = true;
+int previousGoodCurrentMode = currentLEDMode;
 
+char ptrTaskList[250];
 
 void loop()
 {
@@ -666,7 +676,7 @@ void loop()
 
   RESTloadVoltage = SunControl.readChannelVoltage(OUTPUT_CHANNEL);
   RESTloadCurrent = SunControl.readChannelCurrent(OUTPUT_CHANNEL);
-  
+
 #ifdef BC24DEBUG
 
   Serial.print("solarVoltage=");
@@ -678,9 +688,17 @@ void loop()
   if ((RESTsolarVoltage < 2.0) || (turnOnLight == 1))
     //  if ((RESTsolarVoltage > 2.0) || (turnOnLight == 1))  // debug
   {
-    // now display a circle of LEDs
-    // Note:   We split this up to allow checks for REST calls - This is not interrupt driven (should be in an RTOS task), but it should be.
-    // BC24CircleRainbow();
+#ifdef BC24DEBUG
+    Serial.println("Display On");
+#endif
+
+    if (first == false)
+    {
+      currentLEDMode = previousGoodCurrentMode;
+    }
+    first = true;
+    // now display the LED Mode
+
 
 
     evaluatedCurrentLEDMode();
@@ -688,7 +706,30 @@ void loop()
   }
   else
   {
-    currentLEDMode = BC24_LED_MODE_NO_ROTATE_CLOCK; // defaults to clock
+
+#ifdef BC24DEBUG
+    Serial.println("Display Off");
+#endif
+    // clear display
+    if (first)
+    {
+
+      previousGoodCurrentMode = currentLEDMode;
+      currentLEDMode = BC24_WEATHER_MODE_NO_ROTATE_BLANK;
+
+      oldCurrentLEDMode = -1;
+      evaluatedCurrentLEDMode();
+
+      currentLEDMode = previousGoodCurrentMode;
+      vTaskDelay(3000 / portTICK_PERIOD_MS);
+
+      //strand_t * pStrand = &STRANDS[0];
+      //BC24clearStrip(pStrand);
+      first = false;
+
+    }
+
+
 
     if ((loopCount % 5) == 0)
       blinkLED(2, 300);  // blink twice - I'm still here!
@@ -696,11 +737,13 @@ void loop()
   }
   loopCount++;
 
-
+ 
 
   vTaskDelay(1000 / portTICK_PERIOD_MS);
 
 }
+
+
 
 void printValues()
 {

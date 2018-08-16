@@ -166,6 +166,7 @@ void taskClock( void * parameter)
 
     }
     vTaskDelay(1000 / portTICK_PERIOD_MS);
+
   }
 
 
@@ -187,6 +188,7 @@ void taskFire( void * parameter)
     }
     else
     {
+
       vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
@@ -249,93 +251,102 @@ void taskRESTCommand( void * parameter)
 
 }
 
+
+int normalize(int i)
+{
+  if ( i > 255)
+    i = 255;
+
+  if (i < 0)
+    i = 0;
+
+  return i;
+}
+
+
 void taskRainbow( void * parameter)
 {
+  strand_t * pStrand = &STRANDS[0];
   // Enter RTOS Task Loop
   for (;;)  {
 
-    strand_t * pStrand = &STRANDS[0];
-        printSemaphoreStatus("In Task Rainbow");
+
+
     if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
     {
+ 
 
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
+      int currentPixel = 0;
+      int r, g, b;
+
+      r = 0; g = 0; b = 0;
+      int mySign = -1;
+      pixelColor_t myColor;
+
+      while (1)
       {
 
-        rainbow(pStrand, 0, 2000);
-      }
-      else
-        break;
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
+        // Start off with red.
+        unsigned int rgbColour[3];
+        rgbColour[0] = 255;
+        rgbColour[1] = 0;
+        rgbColour[2] = 0;
 
-        scanner(pStrand, 0, 2000);
-      }
-      else
-        break;
+        // Choose the colours to increment and decrement.
+        for (int decColour = 0; decColour < 3; decColour += 1) {
+          int incColour = decColour == 2 ? 0 : decColour + 1;
 
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        scanner(pStrand, 1, 2000);
-      }
-      else
-        break;
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        scanner(pStrand, 0, 2000);
-      }
-      else
-        break;
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        rainbow(pStrand, 0, 2000);
-      }
-      else
-        break;
+          // cross-fade the two colours.
+          for (int i = 0; i < 255; i += 1) {
+            rgbColour[decColour] -= 1;
+            rgbColour[incColour] += 1;
 
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        scanner(pStrand, 1, 2000); // A tiny delay can smooth things out
-      }
-      else
-        break;
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        rainbow(pStrand, 0, 2000);
-      }
-      else
-        break;
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        scanner(pStrand, 5, 2000);
-      }
-      else
-        break;
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        rainbow(pStrand, 0, 2000);
-      }
-      else
-        break;
+            myColor = pixelFromRGBW(rgbColour[0], rgbColour[1], rgbColour[2], 0);
 
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        rainbow(pStrand, 0, 2000);
-      }
-      else
-        break;
+            if (uxSemaphoreGetCount( xSemaphoreRainbow ) == 0)
+            {
+              break;
+            }
 
-      if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
-      {
-        rainbow(pStrand, 0, 2000);
+            for (int i = 0; i < 24; i++)
+            {
+
+              displayCircleLED(currentPixel, myColor);
+              currentPixel = (currentPixel + 1) % 24;
+
+              vTaskDelay(5 / portTICK_PERIOD_MS);
+            }
+            if (uxSemaphoreGetCount( xSemaphoreRainbow ) == 0)
+            {
+              break;
+            }
+
+          }
+          if (uxSemaphoreGetCount( xSemaphoreRainbow ) == 0)
+          {
+            break;
+          }
+
+        }
+
+
+
+        if (uxSemaphoreGetCount( xSemaphoreRainbow ) == 0)
+        {
+          for (int i=0; i< 24; i++)
+            displaySinglePixel(i, Black);
+          //BC24clearStrip();
+          break;
+        }
       }
-      else
-        break;
+
 
 
     }
 
-      vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+
 
   }
 }
