@@ -129,47 +129,63 @@ void taskClock( void * parameter)
 
   for ( ;; )
   {
+
     if (uxSemaphoreGetCount( xSemaphoreClock ) > 0)
     {
-
       xSemaphoreTake( xSemaphoreIRResource, portMAX_DELAY); // Take the resource
-      if (WiFiPresent)
+      while (1)
       {
-        int currentPixel = 0;
+
+        if (WiFiPresent)
+        {
+          int currentPixel = 0;
 #ifdef BC24DEBUG
-        Serial.println("Clock task running");
+          Serial.println("Clock task running");
 #endif
-        time_t currentTime;
-        currentTime = timeClient.getEpochTime();
-        // Serial.println("After epoch time");
+          time_t currentTime;
+          currentTime = timeClient.getEpochTime();
+          // Serial.println("After epoch time");
 
 
 
-        tmElements_t tm_currentTime;
-        breakTime(currentTime, tm_currentTime);
-        //Serial.println("After breaktime");
-        digitalClockDisplay();
+          tmElements_t tm_currentTime;
+          breakTime(currentTime, tm_currentTime);
+          //Serial.println("After breaktime");
+#ifdef BC24DEBUG
+          digitalClockDisplay();
+#endif
 
-        displayClock(tm_currentTime.Hour, tm_currentTime.Minute, tm_currentTime.Second);
-        // Serial.println("After displayClock");
+          displayClock(tm_currentTime.Hour, tm_currentTime.Minute, tm_currentTime.Second);
+          // Serial.println("After displayClock");
 
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // Serial.println("after vTaskDealy");
+          vTaskDelay(1000 / portTICK_PERIOD_MS);
+          // Serial.println("after vTaskDealy");
+        }
+
+        else
+        {
+          // no Wifi
+
+
+          BC24BottomFiveBlink(Red, 1000);
+          vTaskDelay(10000 / portTICK_PERIOD_MS);
+        }
+        if (uxSemaphoreGetCount( xSemaphoreClock ) > 0)
+        {
+
+        }
+        else
+        {
+
+          break;
+        }
       }
-
-      else
-      {
-        // no Wifi
-
-
-        BC24BottomFiveBlink(Red, 1000);
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
-      }
-
+#ifdef BC24DEBUG
+      Serial.println("Clock --->Giving Resource Back");
+#endif
+      xSemaphoreGive( xSemaphoreIRResource);   // make resource available
     }
-    xSemaphoreGive( xSemaphoreIRResource);   // make resource available
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-
   }
 
 
@@ -183,76 +199,42 @@ void taskFire( void * parameter)
   // Enter RTOS Task Loop
   for (;;)  {
 
+
     if (uxSemaphoreGetCount( xSemaphoreFire ) > 0)
     {
+
+
       xSemaphoreTake( xSemaphoreIRResource, portMAX_DELAY); // Take the resource
-      fire.Draw();
-      vTaskDelay(random(50, 150) / portTICK_PERIOD_MS);
-    }
-    else
-    {
-      xSemaphoreGive( xSemaphoreIRResource);   // make resource available
-      vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-
-
-  }
-
-}
-
-
-
-
-void taskRESTCommand( void * parameter)
-{
-  // Enter RTOS Task Loop
-  for (;;)  {
-
-    if (uxSemaphoreGetCount( xSemaphoreRESTCommand ) > 0)
-    {
-
-
-      // Handle REST calls
-      WiFiClient client = server.available();
-
-      int timeout;
-      timeout = 0;
-      if (client)
+      while (1)
       {
 
-        // Thank you to MAKA69 for this suggestion
-        while (!client.available()) {
-          Serial.print(".");
-          vTaskDelay(10 / portTICK_PERIOD_MS);
-          timeout++;
-          if (timeout > 1000) {
-            Serial.print("INFINITE LOOP BREAK!");
-            break;
-          }
-        }
-        if (client.available())
+        fire.Draw();
+        vTaskDelay(random(50, 100) / portTICK_PERIOD_MS);
+        if (uxSemaphoreGetCount( xSemaphoreFire ) == 0)
         {
 
 
-
-
-          rest.handle(client);
-
+          break;
         }
-      }
-      client.stop();
 
-      vTaskDelay(1000 / portTICK_PERIOD_MS);
+      }
+#ifdef BC24DEBUG
+      Serial.println("Fire --->Giving Resource Back");
+#endif
+      xSemaphoreGive( xSemaphoreIRResource);   // make resource available
+
     }
-    else
-    {
-      vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+
+
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
 
 
   }
 
 }
+
+
 
 
 int normalize(int i)
@@ -342,7 +324,10 @@ void taskRainbow( void * parameter)
           break;
         }
       }
-    xSemaphoreGive( xSemaphoreIRResource);   // make resource available
+#ifdef BC24DEBUG
+      Serial.println("Rainbow --->Giving Resource Back");
+#endif
+      xSemaphoreGive( xSemaphoreIRResource);   // make resource available
 
 
     }
@@ -354,4 +339,56 @@ void taskRainbow( void * parameter)
   }
 }
 
+
+
+void taskRESTCommand( void * parameter)
+{
+  // Enter RTOS Task Loop
+  for (;;)  {
+
+    if (uxSemaphoreGetCount( xSemaphoreRESTCommand ) > 0)
+    {
+
+
+      // Handle REST calls
+      WiFiClient client = server.available();
+
+      int timeout;
+      timeout = 0;
+      if (client)
+      {
+
+        // Thank you to MAKA69 for this suggestion
+        while (!client.available()) {
+          Serial.print(".");
+          vTaskDelay(10 / portTICK_PERIOD_MS);
+          timeout++;
+          if (timeout > 1000) {
+            Serial.print("INFINITE LOOP BREAK!");
+            break;
+          }
+        }
+        if (client.available())
+        {
+
+
+
+
+          rest.handle(client);
+
+        }
+      }
+      client.stop();
+
+      vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+    else
+    {
+      vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+
+
+  }
+
+}
 

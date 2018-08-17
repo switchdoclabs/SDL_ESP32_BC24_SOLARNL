@@ -5,7 +5,7 @@
 //
 //
 
-#define BC24SOLARNLSOFTWAREVERSION "007"
+#define BC24SOLARNLSOFTWAREVERSION "008"
 #undef BC24DEBUG
 
 // the three channels of the INA3221 named for SunControl Solar Power Controller channels (www.switchdoc.com)
@@ -312,7 +312,7 @@ void setup()
   xSemaphoreGive( xSemaphoreSingleBlink);   // initialize
   xSemaphoreTake( xSemaphoreSingleBlink, 10);   // start with this off
 
-// Semaphore to control use of IR Resource
+  // Semaphore to control use of IR Resource
 
 
   xSemaphoreIRResource = xSemaphoreCreateBinary();
@@ -586,6 +586,8 @@ void printSemaphoreStatus(String Description)
   Serial.println(uxSemaphoreGetCount(xSemaphoreFire));
   Serial.print("RainbowSemaphore=");
   Serial.println(uxSemaphoreGetCount(xSemaphoreRainbow));
+  Serial.print("xSemaphoreIRResource=");
+  Serial.println(uxSemaphoreGetCount(xSemaphoreIRResource));
   Serial.println("------------------------");
 #endif
 
@@ -742,7 +744,7 @@ void loop()
   }
   loopCount++;
 
- 
+
 
   vTaskDelay(1000 / portTICK_PERIOD_MS);
 

@@ -832,7 +832,10 @@ pixelColor_t addColors(pixelColor_t color1, pixelColor_t color2)
 
 void   displayClock(int displayHour, int displayMinute, int displaySecond)
 {
+#ifdef BC24DEBUG
   Serial.println("Clock Second Tick");
+#endif
+
   strand_t * pStrand = &STRANDS[0];
 
   int secondPixel;
