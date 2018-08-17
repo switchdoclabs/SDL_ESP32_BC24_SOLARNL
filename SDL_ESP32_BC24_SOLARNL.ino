@@ -5,7 +5,7 @@
 //
 //
 
-#define BC24SOLARNLSOFTWAREVERSION "006"
+#define BC24SOLARNLSOFTWAREVERSION "007"
 #undef BC24DEBUG
 
 // the three channels of the INA3221 named for SunControl Solar Power Controller channels (www.switchdoc.com)
@@ -312,6 +312,11 @@ void setup()
   xSemaphoreGive( xSemaphoreSingleBlink);   // initialize
   xSemaphoreTake( xSemaphoreSingleBlink, 10);   // start with this off
 
+// Semaphore to control use of IR Resource
+
+
+  xSemaphoreIRResource = xSemaphoreCreateBinary();
+  xSemaphoreGive( xSemaphoreIRResource);   // initialize with it available
 
 
   // RTOS

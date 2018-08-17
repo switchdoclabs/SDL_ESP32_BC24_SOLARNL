@@ -14,5 +14,7 @@ SemaphoreHandle_t  xSemaphoreRESTCommand;
 
 SemaphoreHandle_t  xSemaphoreRainbow;
 
+SemaphoreHandle_t  xSemaphoreIRResource;
+
 
 

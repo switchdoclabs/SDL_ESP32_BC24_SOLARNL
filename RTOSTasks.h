@@ -131,6 +131,8 @@ void taskClock( void * parameter)
   {
     if (uxSemaphoreGetCount( xSemaphoreClock ) > 0)
     {
+
+      xSemaphoreTake( xSemaphoreIRResource, portMAX_DELAY); // Take the resource
       if (WiFiPresent)
       {
         int currentPixel = 0;
@@ -165,6 +167,7 @@ void taskClock( void * parameter)
       }
 
     }
+    xSemaphoreGive( xSemaphoreIRResource);   // make resource available
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 
   }
@@ -182,13 +185,13 @@ void taskFire( void * parameter)
 
     if (uxSemaphoreGetCount( xSemaphoreFire ) > 0)
     {
-
+      xSemaphoreTake( xSemaphoreIRResource, portMAX_DELAY); // Take the resource
       fire.Draw();
       vTaskDelay(random(50, 150) / portTICK_PERIOD_MS);
     }
     else
     {
-
+      xSemaphoreGive( xSemaphoreIRResource);   // make resource available
       vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
@@ -274,7 +277,7 @@ void taskRainbow( void * parameter)
 
     if (uxSemaphoreGetCount( xSemaphoreRainbow ) > 0)
     {
- 
+      xSemaphoreTake( xSemaphoreIRResource, portMAX_DELAY); // Take the resource
 
       int currentPixel = 0;
       int r, g, b;
@@ -333,13 +336,13 @@ void taskRainbow( void * parameter)
 
         if (uxSemaphoreGetCount( xSemaphoreRainbow ) == 0)
         {
-          for (int i=0; i< 24; i++)
+          for (int i = 0; i < 24; i++)
             displaySinglePixel(i, Black);
           //BC24clearStrip();
           break;
         }
       }
-
+    xSemaphoreGive( xSemaphoreIRResource);   // make resource available
 
 
     }
