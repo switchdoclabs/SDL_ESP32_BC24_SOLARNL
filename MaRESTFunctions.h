@@ -281,6 +281,24 @@ int setAdminPassword(String command)
 
 }
 
+int setReset(String command) {
+  Serial.println("setReset");
+ Serial.print("Command =");
+  Serial.println(command);
+
+
+
+
+  if (command == adminPassword)
+  {
+    ESP.restart();
+    return 1;
+  }
+  else
+    return 0;
+
+
+}
 
 int rebootBC24Weather(String command) {
 

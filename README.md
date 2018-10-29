@@ -3,7 +3,8 @@ BC24 With the SunControl Solar Power <BR>
 SwitchDoc Labs June 2018 <BR>
 For the BC24 24 Pixel plus ESP32 Dual Core Processor with Grove Connectors
 
-August 17, 2018:  V007:  Fixed IR Hardware Allocation . <BR>
+October 26, 2018: V009:  Added "reset?params=password" to reset the ESP32 remotely <BR>
+August 17, 2018:  V008:  Fixed IR Hardware Allocation . <BR>
 August 15, 2018:  V007:  Fixed IR Hardware race condition.  Added semaphore for hardware. <BR>
 August 15, 2018:  V006:  Bug fixes<BR>
 August 13, 2018:  V005:  Bug fixes, additional REST variables - Full Release<BR> 

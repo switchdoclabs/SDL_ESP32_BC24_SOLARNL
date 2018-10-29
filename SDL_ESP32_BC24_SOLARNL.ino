@@ -5,8 +5,8 @@
 //
 //
 
-#define BC24SOLARNLSOFTWAREVERSION "008"
-#undef BC24DEBUG
+#define BC24SOLARNLSOFTWAREVERSION "010"
+#define BC24DEBUG
 
 // the three channels of the INA3221 named for SunControl Solar Power Controller channels (www.switchdoc.com)
 #define LIPO_BATTERY_CHANNEL 1
@@ -298,6 +298,7 @@ void setup()
   rest.function("setDarkLight", setDarkLight);
   rest.function("setClockTimeOffsetToUTC", setClockTimeOffsetToUTC);
   rest.function("setTurnOn", setTurnOn);
+  rest.function("reset", setReset);
 
   rest.function("setAdminPassword", setAdminPassword);
 

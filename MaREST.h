@@ -115,6 +115,7 @@
 #define NUMBER_SUBSCRIPTIONS 4
 
 // Debug mode
+#define DEBUG_MODE 255
 #ifndef DEBUG_MODE
 #define DEBUG_MODE 0
 #endif
@@ -148,7 +149,7 @@
 // Default number of max. exposed variables
 #ifndef NUMBER_VARIABLES
   #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(CORE_WILDFIRE) || defined(ESP8266)|| defined(ESP32) || !defined(ADAFRUIT_CC3000_H)
-  #define NUMBER_VARIABLES 20
+  #define NUMBER_VARIABLES 22
   #else
   #define NUMBER_VARIABLES 5
   #endif
@@ -157,7 +158,7 @@
 // Default number of max. exposed functions
 #ifndef NUMBER_FUNCTIONS
   #if defined(__AVR_ATmega1280__) || defined(ESP32) || defined(__AVR_ATmega2560__) || defined(CORE_WILDFIRE) || defined(ESP8266)
-  #define NUMBER_FUNCTIONS 20
+  #define NUMBER_FUNCTIONS 22
   #else
   #define NUMBER_FUNCTIONS 5
   #endif
